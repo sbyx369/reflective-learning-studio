@@ -56,7 +56,7 @@ File Processing:
 
 Step 1: Clone the repository
 
-git clone https://github.com/your-username/reflective-learning-studio.git  
+git clone https://github.com/sbyx369/reflective-learning-studio.git  
 cd reflective-learning-studio  
 
 Step 2: Install dependencies
