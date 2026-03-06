@@ -69,10 +69,24 @@ section[data-testid="stSidebar"] > div > div,
 [data-testid="stSidebar"] > div {{
     background-color:{SB_BG}!important;
     background:{SB_BG}!important;
+    transform: none !important;
+    visibility: visible !important;
+    display: block !important;
+    opacity: 1 !important;
 }}
 [data-testid="stSidebar"] {{
     border-right:2px solid {BORDER}!important;
-    min-width:250px!important;
+    min-width:260px!important;
+    max-width:320px!important;
+    width:270px!important;
+    position:relative!important;
+    flex-shrink:0!important;
+}}
+[data-testid="collapsedControl"] {{
+    display:none!important;
+}}
+[data-testid="stSidebarNav"] {{
+    display:none!important;
 }}
 [data-testid="stSidebar"] > div:first-child {{
     padding:1.2rem 1rem!important;
@@ -785,3 +799,17 @@ if st.session_state.history:
             st.markdown(item.get("output",""))
             st.download_button("📥 Download", data=item.get("output",""),
                 file_name=f"{item['format']}_{i}.txt", mime="text/plain", key=f"hl_{i}")
+
+# ── AUTO-OPEN SIDEBAR ──
+st.markdown("""
+<script>
+(function() {
+    function openSidebar() {
+        var btn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+        if (btn) { btn.click(); }
+    }
+    setTimeout(openSidebar, 500);
+    setTimeout(openSidebar, 1500);
+})();
+</script>
+""", unsafe_allow_html=True)
