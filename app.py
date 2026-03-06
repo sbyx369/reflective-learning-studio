@@ -90,7 +90,7 @@ else:
     EYEBROW = "#4a78cc"
 
 # ═══════════════════════════════════════════════════════════
-# GLOBAL CSS — Clean, Organised, Theme-aware
+# GLOBAL CSS
 # ═══════════════════════════════════════════════════════════
 st.markdown(f"""
 <style>
@@ -108,13 +108,11 @@ html, body,
     font-family: 'Outfit', sans-serif !important;
 }}
 
-/* ── HIDE STREAMLIT CHROME ── */
+/* ── HIDE STREAMLIT CHROME (Kept Sidebar Toggles Visible) ── */
 #MainMenu, footer, header,
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-[data-testid="stSidebarCollapseButton"],
-[data-testid="collapsedControl"] {{
+[data-testid="stStatusWidget"] {{
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
@@ -857,14 +855,22 @@ def quota_ui():
 # ═══════════════════════════════════════════════════════════
 # FILE READERS
 # ═══════════════════════════════════════════════════════════
-def read_pdf(f):
+@st.cache_data
+def read_pdf(file_bytes):
+    # Using BytesIO to handle the uploaded file properly in cache
+    from io import BytesIO
+    f = BytesIO(file_bytes)
     return "\n".join(p.extract_text() for p in PyPDF2.PdfReader(f).pages if p.extract_text())
 
-def read_docx(f):
+@st.cache_data
+def read_docx(file_bytes):
+    from io import BytesIO
+    f = BytesIO(file_bytes)
     return "\n".join(p.text for p in Document(f).paragraphs if p.text.strip())
 
-def read_txt(f):
-    return f.read().decode("utf-8", errors="ignore")
+@st.cache_data
+def read_txt(file_bytes):
+    return file_bytes.decode("utf-8", errors="ignore")
 
 # ═══════════════════════════════════════════════════════════
 # PROMPTS
@@ -927,7 +933,7 @@ def run_gen(fmt, content, manual, difficulty, persona, temp, mode="output"):
 # SETUP SCREEN
 # ═══════════════════════════════════════════════════════════
 def show_setup():
-    # Override background
+    # Override background, leaving sidebar visible
     st.markdown(f"""
 <style>
 html, body, [data-testid="stApp"],
@@ -935,16 +941,7 @@ html, body, [data-testid="stApp"],
 .block-container {{
     background: {BG} !important;
 }}
-[data-testid="stSidebar"] {{ display: none !important; }}
 </style>""", unsafe_allow_html=True)
-
-    # Theme toggle
-    _, tc = st.columns([10, 1])
-    with tc:
-        icon = "☀️" if dark else "🌙"
-        if st.button(icon, help="Toggle theme"):
-            st.session_state.dark_mode = not dark
-            st.rerun()
 
     # Render setup UI
     st.markdown(f"""
@@ -1022,15 +1019,9 @@ html, body, [data-testid="stApp"],
 </div>
 """, unsafe_allow_html=True)
 
-# ═══════════════════════════════════════════════════════════
-# GATE
-# ═══════════════════════════════════════════════════════════
-if not has_key():
-    show_setup()
-    st.stop()
 
 # ═══════════════════════════════════════════════════════════
-# SIDEBAR
+# SIDEBAR (Moved Above the Gate)
 # ═══════════════════════════════════════════════════════════
 with st.sidebar:
 
@@ -1146,6 +1137,13 @@ with st.sidebar:
         st.rerun()
 
 # ═══════════════════════════════════════════════════════════
+# GATE (Now Appears Below Sidebar Rendering)
+# ═══════════════════════════════════════════════════════════
+if not has_key():
+    show_setup()
+    st.stop()
+
+# ═══════════════════════════════════════════════════════════
 # MAIN — HERO
 # ═══════════════════════════════════════════════════════════
 st.markdown(f"""
@@ -1194,9 +1192,11 @@ if uploaded:
     with st.spinner(f"Reading {uploaded.name}..."):
         try:
             ft = uploaded.type
-            if   "pdf"      in ft: file_text = read_pdf(uploaded)
-            elif "document" in ft: file_text = read_docx(uploaded)
-            else:                   file_text = read_txt(uploaded)
+            # We pass the bytes to the cached reader function
+            file_bytes = uploaded.getvalue()
+            if   "pdf"      in ft: file_text = read_pdf(file_bytes)
+            elif "document" in ft: file_text = read_docx(file_bytes)
+            else:                  file_text = read_txt(file_bytes)
             st.success(f"**{uploaded.name}** loaded — {len(file_text):,} characters")
         except Exception as e:
             st.error(f"Could not read file: {e}")
