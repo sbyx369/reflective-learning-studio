@@ -120,9 +120,25 @@ html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"] > .main {{
 
 .block-container {{ max-width: 1080px !important; margin: 0 auto !important; padding: 1rem 2rem 6rem !important; background: {BG} !important; }}
 
-[data-testid="stSidebar"] {{ background-color: {SB_BG} !important; border-right: 1px solid {BORDER} !important; }}
-[data-testid="stSidebar"] > div:first-child {{ padding: 1.2rem 1rem !important; background-color: {SB_BG} !important; }}
-[data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {{ color: {TEXT2} !important; }}
+[data-testid="stSidebar"], [data-testid="stSidebar"] * {{ background-color: {SB_BG} !important; color: {TEXT2} !important; }}
+[data-testid="stSidebar"] {{ border-right: 1px solid {BORDER} !important; }}
+[data-testid="stSidebar"] > div:first-child {{ padding: 1.2rem 1rem !important; }}
+
+/* Ensure all text in sidebar is visible */
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] span, 
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] small,
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] h5,
+[data-testid="stSidebar"] h6 {{ 
+    color: {TEXT2} !important;
+    background-color: transparent !important;
+}}
 
 button, [role="button"], label, [data-baseweb="tab"], [data-baseweb="option"] {{ cursor: pointer !important; }}
 
@@ -261,6 +277,9 @@ details > summary {{
     border-radius: 12px !important;
     padding: 0.8rem 1rem !important;
 }}
+
+[data-testid="stMetricValue"] {{ color: {STAT_V} !important; font-family: 'Space Mono', monospace !important; font-size: 1.2rem !important; }}
+[data-testid="metric-container"] label {{ color: {TEXT3} !important; font-size: 0.72rem !important; text-transform: uppercase !important; letter-spacing: 0.1em !important; }}
 
 [data-testid="stMetricValue"] {{ color: {STAT_V} !important; font-family: 'Space Mono', monospace !important; font-size: 1.2rem !important; }}
 [data-testid="metric-container"] label {{ color: {TEXT3} !important; font-size: 0.7rem !important; text-transform: uppercase !important; letter-spacing: 0.1em !important; }}
@@ -835,15 +854,17 @@ with st.sidebar:
             st.rerun()
 
     st.markdown(
-        f'<div style="border-top:1px solid {BORDER};margin-bottom:0.3rem;"></div>',
+        f'<div style="border-top:1px solid {BORDER};margin-bottom:0.5rem;"></div>',
         unsafe_allow_html=True,
     )
 
+    # Settings Section
     st.markdown('<span class="sb-label">⚙ Settings</span>', unsafe_allow_html=True)
     difficulty = st.selectbox(
         "Difficulty",
         ["Beginner", "Intermediate", "Advanced"],
         label_visibility="collapsed",
+        key="difficulty_select"
     )
     persona = st.selectbox(
         "Persona",
@@ -857,19 +878,21 @@ with st.sidebar:
             "💪 Motivational",
         ],
         label_visibility="collapsed",
+        key="persona_select"
     )
     st.markdown(
-        f'<div style="font-size:0.75rem;color:{TEXT2};margin:0.5rem 0 0.1rem;">Creativity</div>',
+        f'<div style="font-size:0.75rem;color:{TEXT2};margin:0.6rem 0 0.2rem;font-weight:600;">Creativity</div>',
         unsafe_allow_html=True,
     )
-    creativity = st.slider("", 0.1, 1.0, 0.4, label_visibility="collapsed")
+    creativity = st.slider("", 0.1, 1.0, 0.4, label_visibility="collapsed", key="creativity_slider")
 
+    # Pomodoro Section
     st.markdown('<span class="sb-label">⏱ Pomodoro</span>', unsafe_allow_html=True)
     pc1, pc2 = st.columns([3, 1])
     with pc1:
-        pmin = st.selectbox("", [25, 10, 15, 30, 45, 60], label_visibility="collapsed")
+        pmin = st.selectbox("Minutes", [25, 10, 15, 30, 45, 60], label_visibility="collapsed", key="pomo_select")
     with pc2:
-        if st.button("▶", use_container_width=True):
+        if st.button("▶", use_container_width=True, key="pomo_start"):
             st.session_state.timer_start = time.time()
             st.session_state.timer_duration = pmin * 60
 
@@ -877,57 +900,104 @@ with st.sidebar:
         rem = st.session_state.timer_duration - (time.time() - st.session_state.timer_start)
         if rem > 0:
             st.markdown(
-                f'<div class="pomo-time">{int(rem//60):02d}:{int(rem%60):02d}</div>',
+                f'<div class="pomo-time">{int(rem // 60):02d}:{int(rem % 60):02d}</div>',
                 unsafe_allow_html=True,
             )
             st.progress(1 - rem / st.session_state.timer_duration)
         else:
             st.error("🔔 Break time!")
-            if st.button("Reset Timer", use_container_width=True):
+            if st.button("Reset Timer", use_container_width=True, key="pomo_reset"):
                 st.session_state.timer_start = None
                 st.rerun()
 
+    # API Keys Section
     st.markdown('<span class="sb-label">🔑 API Keys</span>', unsafe_allow_html=True)
     uk = len(st.session_state.user_api_keys)
     st.markdown(
-        f'<span class="key-live"></span><span style="font-size:0.82rem;color:#10b981;">{uk} personal key(s) active</span>',
+        f'<span class="key-live"></span><span style="font-size:0.82rem;color:#10b981; font-weight:600;">{uk} personal key(s) active</span>',
         unsafe_allow_html=True,
     )
-    with st.expander("➕ Add / Manage Keys"):
-        st.caption(
-            "👉 [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)"
-        )
+
+    with st.expander("➕ Add / Manage Keys", expanded=False):
+        st.markdown(
+            f'<div style="font-size:0.8rem;color:{TEXT2};margin-bottom:0.8rem;"><strong>Get your free API key:</strong></div>',
+            unsafe_allow_html=True)
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("🔑 Open Google AI Studio", use_container_width=True, key="open_api_studio"):
+                st.markdown('[Click here to open aistudio.google.com](https://aistudio.google.com/app/apikey)',
+                            unsafe_allow_html=True)
+        with col2:
+            st.markdown(
+                f'<a href="https://aistudio.google.com/app/apikey" target="_blank" style="display:block;text-align:center;padding:0.4rem;border:1px solid {BORDER};border-radius:6px;color:{TEXT2};text-decoration:none;font-size:0.75rem;font-weight:600;">Open in New Tab ↗</a>',
+                unsafe_allow_html=True)
+
+        st.markdown(f'<div style="font-size:0.8rem;color:{TEXT3};margin:0.8rem 0 0.4rem;">Paste your key below:</div>',
+                    unsafe_allow_html=True)
         nk = st.text_input(
-            "",
+            "API Key",
             type="password",
             placeholder="AIzaSy...",
             key="sb_key",
             label_visibility="collapsed",
         )
-        if st.button("Add Key", use_container_width=True, key="sb_add"):
-            if nk.strip() and nk.strip() not in st.session_state.user_api_keys:
+
+        if st.button("➕ Add Key", use_container_width=True, key="sb_add", type="primary"):
+            if not nk.strip():
+                st.error("⚠️ Paste your API key first")
+            elif nk.strip() in st.session_state.user_api_keys:
+                st.warning("⚠️ This key is already active")
+            elif not nk.strip().startswith("AIza"):
+                st.error("⚠️ Keys must start with AIza")
+            else:
                 st.session_state.user_api_keys.append(nk.strip())
-                st.success("✅ Added!")
-                st.rerun()
-        if st.session_state.user_api_keys:
-            if st.button("🗑 Remove All Keys", use_container_width=True, key="sb_rm"):
-                st.session_state.user_api_keys = []
+                st.success("✅ Key added successfully!")
+                time.sleep(1)
                 st.rerun()
 
+        # Display added keys
+        if st.session_state.user_api_keys:
+            st.markdown("<hr>", unsafe_allow_html=True)
+            st.markdown(
+                f'<div style="font-size:0.8rem;color:{TEXT3};font-weight:600;margin-bottom:0.6rem;">YOUR ACTIVE KEYS</div>',
+                unsafe_allow_html=True)
+
+            for i, key in enumerate(st.session_state.user_api_keys):
+                key_display = key[:10] + "..." + key[-5:]
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.caption(f"🔑 {key_display}")
+                with col2:
+                    if st.button("❌", key=f"remove_key_{i}", use_container_width=True):
+                        st.session_state.user_api_keys.pop(i)
+                        st.success("✅ Key removed!")
+                        time.sleep(0.5)
+                        st.rerun()
+
+            if len(st.session_state.user_api_keys) > 1:
+                if st.button("🗑 Remove All", use_container_width=True, key="sb_rm"):
+                    st.session_state.user_api_keys = []
+                    st.rerun()
+
+    # Session Stats Section
     st.markdown('<span class="sb-label">📊 Session</span>', unsafe_allow_html=True)
     s1, s2 = st.columns(2)
     with s1:
         st.metric("Generated", len(st.session_state.history))
     with s2:
         st.metric("Notes", 1 if st.session_state.notes_content else 0)
+
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🗑 Reset Session", use_container_width=True):
+    if st.button("🗑 Reset Session", use_container_width=True, key="reset_session"):
         saved = st.session_state.user_api_keys
         mode = st.session_state.dark_mode
         for k, v in defaults.items():
             st.session_state[k] = v
         st.session_state.user_api_keys = saved
         st.session_state.dark_mode = mode
+        st.success("✅ Session reset!")
+        time.sleep(0.5)
         st.rerun()
 
 # ==========================================================
@@ -1103,12 +1173,12 @@ if st.session_state.notes_content:
     with tab1:
         st.caption("Reveal answers one by one to test your memory.")
         if st.button(
-            "Generate Flashcards", use_container_width=True, type="primary", key="fc_gen"
+                "Generate Flashcards", use_container_width=True, type="primary", key="fc_gen"
         ):
             run_gen("Flashcards", **G)
         if (
-            st.session_state.generated_heading == "Flashcards"
-            and st.session_state.generated_output
+                st.session_state.generated_heading == "Flashcards"
+                and st.session_state.generated_output
         ):
             idx = 1
             for blk in st.session_state.generated_output.split("Flashcard"):
@@ -1126,10 +1196,10 @@ if st.session_state.notes_content:
                         unsafe_allow_html=True,
                     )
                     if st.button(
-                        "👁 Reveal"
-                        if not st.session_state[rk]
-                        else "🙈 Hide",
-                        key=f"fcb_{idx}",
+                            "👁 Reveal"
+                            if not st.session_state[rk]
+                            else "🙈 Hide",
+                            key=f"fcb_{idx}",
                     ):
                         st.session_state[rk] = not st.session_state[rk]
                     if st.session_state[rk]:
@@ -1140,7 +1210,7 @@ if st.session_state.notes_content:
     with tab2:
         st.caption("Answer all 5 questions then submit for your score.")
         if st.button(
-            "Generate Quiz", use_container_width=True, type="primary", key="qz_gen"
+                "Generate Quiz", use_container_width=True, type="primary", key="qz_gen"
         ):
             run_gen("Quiz", **G)
             st.session_state.quiz_score = None
@@ -1213,8 +1283,8 @@ if st.session_state.notes_content:
             if st.button("Generate Exam Paper", use_container_width=True, key="exam_gen"):
                 run_gen("Exam Mode", **G)
         if (
-            st.session_state.generated_heading in ["Reflection", "Exam Mode"]
-            and st.session_state.generated_output
+                st.session_state.generated_heading in ["Reflection", "Exam Mode"]
+                and st.session_state.generated_output
         ):
             st.markdown(st.session_state.generated_output)
             st.download_button(
@@ -1234,7 +1304,7 @@ if st.session_state.notes_content:
             placeholder="In simple terms, this topic is about...",
         )
         if st.button(
-            "✅ Analyse My Understanding", use_container_width=True, type="primary"
+                "✅ Analyse My Understanding", use_container_width=True, type="primary"
         ):
             if not fi.strip():
                 st.warning("Write your explanation first!")
@@ -1306,8 +1376,8 @@ if st.session_state.notes_content:
         if run_gen("Exam Mode", **G):
             st.success("✅ Exam paper ready! Good luck 🍀")
     if (
-        st.session_state.generated_heading == "Exam Mode"
-        and st.session_state.generated_output
+            st.session_state.generated_heading == "Exam Mode"
+            and st.session_state.generated_output
     ):
         st.markdown(st.session_state.generated_output)
         st.download_button(
