@@ -90,7 +90,7 @@ else:
     EYEBROW = "#4a78cc"
 
 # ═══════════════════════════════════════════════════════════
-# GLOBAL CSS — Clean, Organised, Theme-aware
+# GLOBAL CSS
 # ═══════════════════════════════════════════════════════════
 st.markdown(f"""
 <style>
@@ -108,17 +108,19 @@ html, body,
     font-family: 'Outfit', sans-serif !important;
 }}
 
-/* ── HIDE STREAMLIT CHROME ── */
-#MainMenu, footer, header,
-[data-testid="stToolbar"],
+/* ── HIDE STREAMLIT CHROME (Kept header visible for sidebar toggle!) ── */
+#MainMenu, footer,
 [data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-[data-testid="stSidebarCollapseButton"],
-[data-testid="collapsedControl"] {{
+[data-testid="stStatusWidget"] {{
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
     height: 0 !important;
+}}
+
+/* Ensure the header is transparent so it looks good */
+header[data-testid="stHeader"] {{
+    background: transparent !important;
 }}
 
 /* ── SCROLLBAR ── */
@@ -924,113 +926,7 @@ def run_gen(fmt, content, manual, difficulty, persona, temp, mode="output"):
     return True
 
 # ═══════════════════════════════════════════════════════════
-# SETUP SCREEN
-# ═══════════════════════════════════════════════════════════
-def show_setup():
-    # Override background
-    st.markdown(f"""
-<style>
-html, body, [data-testid="stApp"],
-[data-testid="stAppViewContainer"] > .main,
-.block-container {{
-    background: {BG} !important;
-}}
-[data-testid="stSidebar"] {{ display: none !important; }}
-</style>""", unsafe_allow_html=True)
-
-    # Theme toggle
-    _, tc = st.columns([10, 1])
-    with tc:
-        icon = "☀️" if dark else "🌙"
-        if st.button(icon, help="Toggle theme"):
-            st.session_state.dark_mode = not dark
-            st.rerun()
-
-    # Render setup UI
-    st.markdown(f"""
-<div class="lf-setup-wrap">
-  <div class="lf-setup-logo">
-    <div class="lf-setup-logo-icon">🧠</div>
-    <div class="lf-setup-logo-name">LearnFlow <span>AI</span></div>
-    <div class="lf-setup-logo-sub">Study Companion</div>
-  </div>
-  <div class="lf-setup-card">
-    <div><span class="lf-setup-badge">✦ Free · No Credit Card · 2 Minutes</span></div>
-    <div class="lf-setup-title">Connect your free API key</div>
-    <div class="lf-setup-sub">
-      LearnFlow AI is powered by Google Gemini — completely free.<br>
-      Get your key in 2 minutes and unlock 12 AI study tools instantly.
-    </div>
-    <div class="lf-steps">
-      <div class="lf-step"><div class="lf-step-n">01</div><div class="lf-step-t">Open Google AI Studio</div></div>
-      <div class="lf-step"><div class="lf-step-n">02</div><div class="lf-step-t">Sign in with Google</div></div>
-      <div class="lf-step"><div class="lf-step-n">03</div><div class="lf-step-t">Click Create API Key</div></div>
-      <div class="lf-step"><div class="lf-step-n">04</div><div class="lf-step-t">Paste it below</div></div>
-    </div>
-    <div class="lf-tip">⚡ Keys look like: <strong>AIzaSyA1B2C3...</strong> &nbsp;(39 characters, starts with AIza)</div>
-    <a class="lf-cta-btn" href="https://aistudio.google.com/app/apikey" target="_blank">🔑 Get My Free API Key →</a>
-    <div class="lf-cta-hint">Opens Google AI Studio in a new tab</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
-    _, mc, _ = st.columns([1, 2, 1])
-    with mc:
-        key_in = st.text_input("Paste your API key here:", type="password",
-                               placeholder="AIzaSy...", key="setup_key_input")
-
-        if st.button("Validate & Start Learning", type="primary", use_container_width=True):
-            k = key_in.strip()
-            if not k:
-                st.warning("Paste your API key above.")
-            elif not k.startswith("AIza"):
-                st.error("Invalid key — Gemini keys always start with **AIza**")
-            elif len(k) < 30:
-                st.error("Key is too short — copy the full key from Google AI Studio.")
-            else:
-                with st.spinner("Validating your key with Google..."):
-                    ok = validate_key(k)
-                if ok:
-                    st.session_state.user_api_keys = [k]
-                    st.balloons()
-                    st.success("Key validated! Welcome to LearnFlow AI")
-                    time.sleep(1.2)
-                    st.rerun()
-                else:
-                    st.error("Google rejected this key. Try copying it again from AI Studio.")
-
-        st.markdown(f"""
-<div class="lf-privacy">
-  🔒 <strong>Privacy:</strong> Your key is stored only in this browser session.
-  It is never sent to any server and is deleted automatically when you close this tab.
-</div>
-<div class="lf-unlock-label">Everything you unlock:</div>
-<div class="lf-unlock-pills">
-  <span class="lf-unlock-pill">📝 Smart Notes</span>
-  <span class="lf-unlock-pill">🎴 Flashcards</span>
-  <span class="lf-unlock-pill">❓ AI Quiz</span>
-  <span class="lf-unlock-pill">🧪 Feynman Check</span>
-  <span class="lf-unlock-pill">🤖 Socratic Tutor</span>
-  <span class="lf-unlock-pill">🎓 Exam Mode</span>
-  <span class="lf-unlock-pill">🧠 Mind Map</span>
-  <span class="lf-unlock-pill">💡 Mnemonics</span>
-  <span class="lf-unlock-pill">⚡ TL;DR</span>
-  <span class="lf-unlock-pill">👶 ELI5</span>
-  <span class="lf-unlock-pill">📅 Study Plan</span>
-  <span class="lf-unlock-pill">⏱ Pomodoro</span>
-  <span class="lf-unlock-pill">🌙 Dark / Light Mode</span>
-</div>
-""", unsafe_allow_html=True)
-
-# ═══════════════════════════════════════════════════════════
-# GATE
-# ═══════════════════════════════════════════════════════════
-if not has_key():
-    show_setup()
-    st.stop()
-
-# ═══════════════════════════════════════════════════════════
-# SIDEBAR
+# SIDEBAR (MOVED TO TOP SO IT ALWAYS LOADS)
 # ═══════════════════════════════════════════════════════════
 with st.sidebar:
 
@@ -1146,6 +1042,100 @@ with st.sidebar:
         st.rerun()
 
 # ═══════════════════════════════════════════════════════════
+# GATE / SETUP SCREEN
+# ═══════════════════════════════════════════════════════════
+def show_setup():
+    # Override background, do NOT hide sidebar
+    st.markdown(f"""
+<style>
+html, body, [data-testid="stApp"],
+[data-testid="stAppViewContainer"] > .main,
+.block-container {{
+    background: {BG} !important;
+}}
+</style>""", unsafe_allow_html=True)
+
+    # Render setup UI exactly as originally designed
+    st.markdown(f"""
+<div class="lf-setup-wrap">
+  <div class="lf-setup-logo">
+    <div class="lf-setup-logo-icon">🧠</div>
+    <div class="lf-setup-logo-name">LearnFlow <span>AI</span></div>
+    <div class="lf-setup-logo-sub">Study Companion</div>
+  </div>
+  <div class="lf-setup-card">
+    <div><span class="lf-setup-badge">✦ Free · No Credit Card · 2 Minutes</span></div>
+    <div class="lf-setup-title">Connect your free API key</div>
+    <div class="lf-setup-sub">
+      LearnFlow AI is powered by Google Gemini — completely free.<br>
+      Get your key in 2 minutes and unlock 12 AI study tools instantly.
+    </div>
+    <div class="lf-steps">
+      <div class="lf-step"><div class="lf-step-n">01</div><div class="lf-step-t">Open Google AI Studio</div></div>
+      <div class="lf-step"><div class="lf-step-n">02</div><div class="lf-step-t">Sign in with Google</div></div>
+      <div class="lf-step"><div class="lf-step-n">03</div><div class="lf-step-t">Click Create API Key</div></div>
+      <div class="lf-step"><div class="lf-step-n">04</div><div class="lf-step-t">Paste it below</div></div>
+    </div>
+    <div class="lf-tip">⚡ Keys look like: <strong>AIzaSyA1B2C3...</strong> &nbsp;(39 characters, starts with AIza)</div>
+    <a class="lf-cta-btn" href="https://aistudio.google.com/app/apikey" target="_blank">🔑 Get My Free API Key →</a>
+    <div class="lf-cta-hint">Opens Google AI Studio in a new tab</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+    _, mc, _ = st.columns([1, 2, 1])
+    with mc:
+        key_in = st.text_input("Paste your API key here:", type="password",
+                               placeholder="AIzaSy...", key="setup_key_input")
+
+        if st.button("Validate & Start Learning", type="primary", use_container_width=True):
+            k = key_in.strip()
+            if not k:
+                st.warning("Paste your API key above.")
+            elif not k.startswith("AIza"):
+                st.error("Invalid key — Gemini keys always start with **AIza**")
+            elif len(k) < 30:
+                st.error("Key is too short — copy the full key from Google AI Studio.")
+            else:
+                with st.spinner("Validating your key with Google..."):
+                    ok = validate_key(k)
+                if ok:
+                    st.session_state.user_api_keys = [k]
+                    st.balloons()
+                    st.success("Key validated! Welcome to LearnFlow AI")
+                    time.sleep(1.2)
+                    st.rerun()
+                else:
+                    st.error("Google rejected this key. Try copying it again from AI Studio.")
+
+        st.markdown(f"""
+<div class="lf-privacy">
+  🔒 <strong>Privacy:</strong> Your key is stored only in this browser session.
+  It is never sent to any server and is deleted automatically when you close this tab.
+</div>
+<div class="lf-unlock-label">Everything you unlock:</div>
+<div class="lf-unlock-pills">
+  <span class="lf-unlock-pill">📝 Smart Notes</span>
+  <span class="lf-unlock-pill">🎴 Flashcards</span>
+  <span class="lf-unlock-pill">❓ AI Quiz</span>
+  <span class="lf-unlock-pill">🧪 Feynman Check</span>
+  <span class="lf-unlock-pill">🤖 Socratic Tutor</span>
+  <span class="lf-unlock-pill">🎓 Exam Mode</span>
+  <span class="lf-unlock-pill">🧠 Mind Map</span>
+  <span class="lf-unlock-pill">💡 Mnemonics</span>
+  <span class="lf-unlock-pill">⚡ TL;DR</span>
+  <span class="lf-unlock-pill">👶 ELI5</span>
+  <span class="lf-unlock-pill">📅 Study Plan</span>
+  <span class="lf-unlock-pill">⏱ Pomodoro</span>
+  <span class="lf-unlock-pill">🌙 Dark / Light Mode</span>
+</div>
+""", unsafe_allow_html=True)
+
+if not has_key():
+    show_setup()
+    st.stop()
+
+# ═══════════════════════════════════════════════════════════
 # MAIN — HERO
 # ═══════════════════════════════════════════════════════════
 st.markdown(f"""
@@ -1196,7 +1186,7 @@ if uploaded:
             ft = uploaded.type
             if   "pdf"      in ft: file_text = read_pdf(uploaded)
             elif "document" in ft: file_text = read_docx(uploaded)
-            else:                   file_text = read_txt(uploaded)
+            else:                  file_text = read_txt(uploaded)
             st.success(f"**{uploaded.name}** loaded — {len(file_text):,} characters")
         except Exception as e:
             st.error(f"Could not read file: {e}")
